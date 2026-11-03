@@ -43,7 +43,11 @@ public class Punteggio {
             storia = new ArrayList<Lato>();
             vincitore = null;
             statoPartita = false;
-        } 
+        } else {
+            throw new IllegalArgumentException(
+                "I punti per vincere sono minori di 1 o lo scarto minimo è minore di 1"
+            );
+        }
     }
 
     /**
@@ -56,21 +60,28 @@ public class Punteggio {
      */
     public void segnaPunto(Lato chi) {
         // scrivete qui{{
-        if ( chi != null && !isFinita() ) {
-            if ( chi == Lato.DESTRA ) {
-                puntiLato1 ++;
-                storia.add( chi );
-                if ( puntiLato1 >= PUNTI_PER_VINCERE && ( puntiLato1 - puntiLato2 ) >= SCARTO_MINIMO ) {
-                    vincitore = Lato.DESTRA;
-                    statoPartita = true;
-                }
-            } else {
-                puntiLato2++;
-                storia.add( chi );
-                if ( puntiLato2 >= PUNTI_PER_VINCERE && ( puntiLato2 - puntiLato1 ) >= SCARTO_MINIMO ) {
-                    vincitore = Lato.SINISTRA;
-                    statoPartita = true;
-                }
+        if (chi == null) {
+            throw new IllegalArgumentException(
+                "Lato chi è null"
+            );
+        }
+
+        if (isFinita()) {
+            return;
+        }
+        if ( chi == Lato.DESTRA ) {
+            puntiLato1 ++;
+            storia.add( chi );
+            if ( puntiLato1 >= PUNTI_PER_VINCERE && ( puntiLato1 - puntiLato2 ) >= SCARTO_MINIMO ) {
+                vincitore = Lato.DESTRA;
+                statoPartita = true;
+            }
+        } else {
+            puntiLato2++;
+            storia.add( chi );
+            if ( puntiLato2 >= PUNTI_PER_VINCERE && ( puntiLato2 - puntiLato1 ) >= SCARTO_MINIMO ) {
+                vincitore = Lato.SINISTRA;
+                statoPartita = true;
             }
         }
     }
@@ -86,6 +97,12 @@ public class Punteggio {
             } else {
                 return puntiLato2;
             }
+        }
+
+        if (chi == null) {
+            throw new IllegalArgumentException(
+                "Lato chi è null"
+            );
         }
         return 0; // scrivete qui
     }
@@ -162,5 +179,59 @@ public class Punteggio {
         vincitore = null;
         statoPartita = false;
         storia = new ArrayList<Lato>(); 
+    }
+
+
+    // invariante
+    boolean repOK() {
+        int storiaDestra = 0;
+        int storiaSinistra = 0;
+        boolean destraVince = false;
+        boolean sinistraVince = false;
+
+        for (Lato lato : storia) {
+            if (lato == null) {
+                return false;
+            }
+
+            if (destraVince || sinistraVince) {
+                return false;
+            }
+
+            switch (lato) {
+                case DESTRA -> {
+                    storiaDestra++;
+                    if (storiaDestra >= PUNTI_PER_VINCERE && storiaDestra - storiaSinistra >= SCARTO_MINIMO) {
+                        destraVince = true;
+                    }
+                }
+                case SINISTRA -> {
+                    storiaSinistra++;
+                    if (storiaSinistra >= PUNTI_PER_VINCERE && storiaSinistra - storiaDestra >= SCARTO_MINIMO) {
+                        sinistraVince = true;
+                    }
+                }
+            }
+        }
+
+        if (storiaDestra != puntiLato1 || storiaSinistra != puntiLato2) {
+            return false;
+        }
+
+        if (destraVince) {
+            if (vincitore != Lato.DESTRA || !statoPartita) {
+                return false;
+            }
+        } else if (sinistraVince) {
+            if (vincitore != Lato.SINISTRA || !statoPartita) {
+                return false;
+            }
+        } else {
+            if (vincitore != null || statoPartita) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
